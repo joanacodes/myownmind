@@ -3,6 +3,7 @@
 import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { supabaseServer } from "@/lib/supabase/server";
+import { createClient } from "@supabase/supabase-js";
 import { canonicalize, enrichItem, previewUrl } from "@/lib/enrich";
 
 export type SaveResult = { ok: boolean; message?: string };
@@ -92,4 +93,45 @@ export async function deleteItem(id: string) {
   const db = await supabaseServer();
   await db.from("items").update({ deleted_at: new Date().toISOString() }).eq("id", id);
   revalidatePath("/");
+}
+
+/**
+ * Creates an account behind a shared invite code. Uses the admin API, so
+ * Supabase's "allow new users to sign up" can stay off — this action is the
+ * only way in. `email_confirm: true` skips the confirmation email, which
+ * matters because the built-in mailer allows only two messages an hour.
+ */
+export async function signUpWithCode(
+  _prev: SaveResult | null,
+  formData: FormData
+): Promise<SaveResult> {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const password = String(formData.get("password") ?? "");
+  const code = String(formData.get("code") ?? "").trim();
+
+  if (!email || !password) return { ok: false, message: "Email and password are required." };
+  if (password.length < 8) return { ok: false, message: "Use at least 8 characters." };
+
+  // Closed by default: a missing secret must never mean "let anyone in".
+  const expected = process.env.SIGNUP_CODE;
+  if (!expected) return { ok: false, message: "Sign-ups are closed." };
+  if (code !== expected) return { ok: false, message: "That invite code is not right." };
+
+  const admin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false } }
+  );
+
+  const { error } = await admin.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+  });
+
+  if (error) {
+    const taken = /already|exists|registered/i.test(error.message);
+    return { ok: false, message: taken ? "That email already has an account." : error.message };
+  }
+  return { ok: true };
 }

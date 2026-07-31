@@ -99,6 +99,14 @@ export default function Login() {
 
           <button
             type="button"
+            onClick={() => router.push("/signup")}
+            className="text-[13px] text-muted underline underline-offset-2 hover:text-ink"
+          >
+            Create an account
+          </button>
+
+          <button
+            type="button"
             onClick={sendReset}
             disabled={busy}
             className="text-[13px] text-muted underline underline-offset-2 hover:text-ink"
