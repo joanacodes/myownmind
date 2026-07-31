@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body { background: #EDEEF0; color: #16181D; }
+
+::selection { background: #4B4FA6; color: #fff; }
+
+*:focus-visible { outline: 2px solid #4B4FA6; outline-offset: 2px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .rise { animation: rise .32s cubic-bezier(.2,.7,.3,1) both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } }
+  .breathe { animation: breathe 1.6s ease-in-out infinite; }
+  @keyframes breathe { 50% { opacity: .45; } }
+}
