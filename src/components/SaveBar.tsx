@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { saveUrl, type SaveResult } from "@/app/actions";
+import { supabaseBrowser } from "@/lib/supabase/client";
 
 export function SaveBar() {
   const form = useRef<HTMLFormElement>(null);
@@ -20,20 +21,46 @@ export function SaveBar() {
     if (result?.ok) form.current?.reset();
   }, [result]);
 
-  return (
-    <div className="sticky top-0 z-20 border-b border-hair bg-page/85 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center gap-4 px-5 py-3.5">
-        <span className="font-serif text-xl italic">mind</span>
+  async function signOut() {
+    await supabaseBrowser().auth.signOut();
+    router.push("/login");
+    router.refresh();
+  }
 
-        <form ref={form} action={formAction} className="flex-1">
+  const field =
+    "w-full rounded-lg border border-hair bg-surface px-3 py-2 text-sm placeholder:text-muted";
+
+  return (
+    // Static on small screens: three stacked controls would eat too much of a
+    // phone viewport if they stayed pinned.
+    <div className="static border-b border-hair bg-page/85 backdrop-blur sm:sticky sm:top-0 sm:z-20">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-3 gap-y-2
+                      px-4 py-3 sm:flex-nowrap sm:gap-4 sm:px-5">
+        <span className="order-1 font-serif text-xl italic">mind</span>
+
+        <button
+          onClick={signOut}
+          className="order-2 ml-auto rounded-lg px-2.5 py-1.5 text-[13px] text-muted
+                     hover:bg-surface hover:text-ink sm:order-4 sm:ml-0"
+        >
+          Sign out
+        </button>
+
+        <form
+          ref={form}
+          action={formAction}
+          className="order-3 w-full sm:order-2 sm:w-auto sm:flex-1"
+        >
           <input
             name="url"
             type="text"
+            inputMode="url"
             disabled={pending}
             placeholder={pending ? "Saving…" : "Paste a link"}
             autoComplete="off"
-            className="w-full rounded-lg border border-hair bg-surface px-3 py-2 text-sm
-                       placeholder:text-muted disabled:opacity-60"
+            autoCapitalize="off"
+            spellCheck={false}
+            className={`${field} disabled:opacity-60`}
           />
         </form>
 
@@ -46,13 +73,13 @@ export function SaveBar() {
             const q = e.target.value;
             router.replace(q ? `/?q=${encodeURIComponent(q)}` : "/");
           }}
-          className="w-44 rounded-lg border border-transparent bg-surface px-3 py-2 text-sm
-                     placeholder:text-muted focus:border-hair"
+          className={`${field} order-4 border-transparent focus:border-hair
+                      sm:order-3 sm:w-44`}
         />
       </div>
 
       {result && !result.ok && (
-        <p role="alert" className="mx-auto max-w-6xl px-5 pb-2.5 text-[13px] text-accent">
+        <p role="alert" className="mx-auto max-w-6xl px-4 pb-2.5 text-[13px] text-accent sm:px-5">
           {result.message}
         </p>
       )}

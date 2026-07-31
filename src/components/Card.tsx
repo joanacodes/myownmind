@@ -8,7 +8,7 @@ export function Card({ item, onOpen }: { item: Item; onOpen: () => void }) {
 
   return (
     <article className="rise group relative mb-4 break-inside-avoid overflow-hidden rounded-xl border border-hair bg-surface">
-      <div className="absolute right-2 top-2 z-10 hidden gap-1 group-hover:flex">
+      <div className="absolute right-2 top-2 z-10 flex gap-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100 max-sm:opacity-100">
         <a
           href={item.url ?? "#"}
           target="_blank"
@@ -41,7 +41,7 @@ export function Card({ item, onOpen }: { item: Item; onOpen: () => void }) {
           />
         )}
 
-        <div className="p-3.5">
+        <div className="p-3 sm:p-3.5">
           <div className={`flex items-center gap-1.5 text-[11px] text-muted ${pending ? "breathe" : ""}`}>
             {item.favicon_url && (
               // eslint-disable-next-line @next/next/no-img-element
@@ -52,7 +52,7 @@ export function Card({ item, onOpen }: { item: Item; onOpen: () => void }) {
             </span>
           </div>
 
-          <h2 className="mt-1.5 text-[15px] font-medium leading-snug">{item.title}</h2>
+          <h2 className="mt-1.5 text-sm font-medium leading-snug sm:text-[15px]">{item.title}</h2>
 
           {item.description && (
             <p className="mt-1 line-clamp-3 text-[13px] leading-relaxed text-muted">
