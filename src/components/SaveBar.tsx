@@ -38,13 +38,22 @@ export function SaveBar() {
                       px-4 py-3 sm:flex-nowrap sm:gap-4 sm:px-5">
         <span className="order-1 font-serif text-xl italic">mind</span>
 
-        <button
-          onClick={signOut}
-          className="order-2 ml-auto rounded-lg px-2.5 py-1.5 text-[13px] text-muted
-                     hover:bg-surface hover:text-ink sm:order-4 sm:ml-0"
-        >
-          Sign out
-        </button>
+        <div className="order-2 ml-auto flex items-center gap-1 sm:order-4 sm:ml-0">
+          <button
+            onClick={() => router.push("/account")}
+            className="rounded-lg px-2.5 py-1.5 text-[13px] text-muted
+                       hover:bg-surface hover:text-ink"
+          >
+            Account
+          </button>
+          <button
+            onClick={signOut}
+            className="rounded-lg px-2.5 py-1.5 text-[13px] text-muted
+                       hover:bg-surface hover:text-ink"
+          >
+            Sign out
+          </button>
+        </div>
 
         <form
           ref={form}
