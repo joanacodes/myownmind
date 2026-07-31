@@ -11,6 +11,16 @@ export function canonicalize(raw: string): string {
   return u.toString().replace(/\/$/, "");
 }
 
+/**
+ * WordPress's free screenshot service. No key, no fetch — it is just a URL
+ * pattern, so it can be set the instant a link is saved. The first request
+ * for a given URL triggers generation and may return a grey placeholder;
+ * it fills in once the shot is ready.
+ */
+export function previewUrl(url: string): string {
+  return `https://s.wordpress.com/mshots/v1/${encodeURIComponent(url)}?w=800`;
+}
+
 type Meta = {
   title: string | null;
   description: string | null;
@@ -54,7 +64,10 @@ async function scrape(url: string): Promise<Meta> {
       'meta[name="twitter:description"]'
     ),
     site_name: pick('meta[property="og:site_name"]') ?? new URL(url).hostname,
-    image_url: abs(pick('meta[property="og:image"]', 'meta[name="twitter:image"]')),
+    // Prefer the site's own social image; fall back to a screenshot.
+    image_url:
+      abs(pick('meta[property="og:image"]', 'meta[name="twitter:image"]')) ??
+      previewUrl(url),
     favicon_url: `https://www.google.com/s2/favicons?domain=${new URL(url).hostname}&sz=64`,
     content_text: body.replace(/\s+/g, " ").trim().slice(0, 4000) || null,
   };

@@ -3,7 +3,7 @@
 import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { supabaseServer } from "@/lib/supabase/server";
-import { canonicalize, enrichItem } from "@/lib/enrich";
+import { canonicalize, enrichItem, previewUrl } from "@/lib/enrich";
 
 export type SaveResult = { ok: boolean; message?: string };
 
@@ -44,13 +44,17 @@ export async function saveUrl(
     id = existing.id;
     await db.from("items").update({ status: "pending", error: null }).eq("id", id);
   } else {
+    const host = new URL(url).hostname;
     const { data, error } = await db
       .from("items")
       .insert({
         user_id: user.id,
         url: raw,
         canonical_url: url,
-        title: new URL(url).hostname,
+        title: host,
+        site_name: host,
+        favicon_url: `https://www.google.com/s2/favicons?domain=${host}&sz=64`,
+        image_url: previewUrl(url),
         status: "pending",
       })
       .select("id")
@@ -63,7 +67,24 @@ export async function saveUrl(
   }
 
   revalidatePath("/");
+  // Realtime pushes the finished row to the browser; no refresh needed.
   after(async () => { await enrichItem(id, url); });
+  return { ok: true };
+}
+
+export async function updateItem(
+  id: string,
+  note: string,
+  tags: string[]
+): Promise<SaveResult> {
+  const db = await supabaseServer();
+  const { error } = await db
+    .from("items")
+    .update({ note: note.trim() || null, tags })
+    .eq("id", id);
+
+  if (error) return { ok: false, message: error.message };
+  revalidatePath("/");
   return { ok: true };
 }
 
