@@ -2,10 +2,13 @@
 
 import { deleteItem } from "@/app/actions";
 import { Thumb } from "./Thumb";
+import { Palette } from "./Palette";
+import { imgSrc } from "@/lib/imgSrc";
 import type { Item } from "@/lib/types";
 
 export function Card({ item, onOpen }: { item: Item; onOpen: () => void }) {
   const pending = item.status === "pending";
+  const src = imgSrc(item);
 
   return (
     <article className="rise group relative mb-4 break-inside-avoid overflow-hidden rounded-xl border border-hair bg-surface">
@@ -31,9 +34,18 @@ export function Card({ item, onOpen }: { item: Item; onOpen: () => void }) {
       </div>
 
       <button onClick={onOpen} className="block w-full cursor-pointer text-left">
-        {item.image_url && <Thumb src={item.image_url} pending={pending} />}
+        {src && (
+          <Thumb
+            src={src}
+            pending={pending}
+            itemId={item.id}
+            hasColors={item.colors.length > 0}
+          />
+        )}
 
         <div className="p-3 sm:p-3.5">
+          <Palette colors={item.colors} limit={5} />
+
           <div className={`flex items-center gap-1.5 text-[11px] text-muted ${pending ? "breathe" : ""}`}>
             {item.favicon_url && (
               // eslint-disable-next-line @next/next/no-img-element

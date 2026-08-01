@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { updateItem } from "@/app/actions";
 import { Thumb } from "./Thumb";
+import { Palette } from "./Palette";
+import { imgSrc } from "@/lib/imgSrc";
 import type { Item } from "@/lib/types";
 
 export function ItemDetail({ item, onClose }: { item: Item; onClose: () => void }) {
@@ -44,9 +46,14 @@ export function ItemDetail({ item, onClose }: { item: Item; onClose: () => void 
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-xl overflow-hidden rounded-2xl border border-hair bg-surface"
       >
-        {item.image_url && (
+        {imgSrc(item) && (
           <div className="max-h-64 overflow-hidden">
-            <Thumb src={item.image_url} pending={item.status === "pending"} />
+            <Thumb
+              src={imgSrc(item)!}
+              pending={item.status === "pending"}
+              itemId={item.id}
+              hasColors={item.colors.length > 0}
+            />
           </div>
         )}
 
@@ -65,14 +72,44 @@ export function ItemDetail({ item, onClose }: { item: Item; onClose: () => void 
             <p className="mt-1.5 text-[13px] leading-relaxed text-muted">{item.description}</p>
           )}
 
-          <a
-            href={item.url ?? "#"}
-            target="_blank"
-            rel="noreferrer"
-            className="mt-2 inline-block text-[13px] text-accent underline underline-offset-2"
-          >
-            Open the original page ↗
-          </a>
+          {item.url && (
+            <a
+              href={item.url}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-2 inline-block text-[13px] text-accent underline underline-offset-2"
+            >
+              Open the original page ↗
+            </a>
+          )}
+
+          {item.colors.length > 0 && (
+            <>
+              <p className="mt-5 text-[11px] font-medium uppercase tracking-wide text-muted">
+                Colours
+              </p>
+              <Palette colors={item.colors} limit={12} size="lg" />
+            </>
+          )}
+
+          {item.fonts.length > 0 && (
+            <>
+              <p className="mt-5 text-[11px] font-medium uppercase tracking-wide text-muted">
+                Fonts
+              </p>
+              <ul className="mt-1.5 flex flex-wrap gap-1.5">
+                {item.fonts.map((f) => (
+                  <li
+                    key={f}
+                    style={{ fontFamily: `"${f}", inherit` }}
+                    className="rounded-md border border-hair px-2 py-1 text-[13px]"
+                  >
+                    {f}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
 
           <label className="mt-5 block text-[11px] font-medium uppercase tracking-wide text-muted">
             Note

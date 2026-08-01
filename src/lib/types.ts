@@ -12,6 +12,9 @@ export type Item = {
   content_text: string | null;
   note: string | null;
   tags: string[];
+  colors: string[];
+  fonts: string[];
+  storage_path: string | null;
   status: "pending" | "ready" | "failed";
   error: string | null;
   created_at: string;

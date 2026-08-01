@@ -21,7 +21,65 @@ export function previewUrl(url: string): string {
   return `https://s.wordpress.com/mshots/v1/${encodeURIComponent(url)}?w=800`;
 }
 
+/**
+ * Font families a site actually uses. Reads three signals, cheapest first:
+ * Google Fonts links, Adobe Fonts kits, and font-family declarations in
+ * inline <style> blocks plus the first same-origin stylesheet.
+ */
+async function extractFonts(
+  $: cheerio.CheerioAPI,
+  pageUrl: string
+): Promise<string[]> {
+  const found = new Set<string>();
+  const GENERIC =
+    /^(inherit|initial|unset|revert|sans-serif|serif|monospace|cursive|fantasy|system-ui|ui-[a-z-]+|-apple-system|BlinkMacSystemFont|Segoe UI|Helvetica|Helvetica Neue|Arial|Roboto|Times|Times New Roman|Courier|Courier New|Georgia|Verdana|Tahoma|emoji|math|fangsong|var\(.*)$/i;
+
+  const addFamily = (raw: string) => {
+    raw
+      .split(",")
+      .map((f) => f.trim().replace(/^["']|["']$/g, ""))
+      .filter((f) => f && f.length < 40 && !GENERIC.test(f))
+      .forEach((f) => found.add(f));
+  };
+
+  $('link[href*="fonts.googleapis.com"]').each((_, el) => {
+    const href = $(el).attr("href") ?? "";
+    for (const m of href.matchAll(/family=([^&:]+)/g)) {
+      addFamily(decodeURIComponent(m[1]).replace(/\+/g, " "));
+    }
+  });
+
+  if ($('link[href*="use.typekit.net"], script[src*="use.typekit.net"]').length) {
+    found.add("Adobe Fonts");
+  }
+
+  const cssBlocks: string[] = [];
+  $("style").each((_, el) => {
+    cssBlocks.push($(el).html() ?? "");
+  });
+
+  // One stylesheet only — enrichment runs inside a request and must stay quick.
+  const sheet = $('link[rel="stylesheet"]').first().attr("href");
+  if (sheet) {
+    try {
+      const res = await fetch(new URL(sheet, pageUrl), {
+        signal: AbortSignal.timeout(6_000),
+      });
+      if (res.ok) cssBlocks.push((await res.text()).slice(0, 200_000));
+    } catch {
+      // A missing stylesheet is not worth failing the save over.
+    }
+  }
+
+  for (const css of cssBlocks) {
+    for (const m of css.matchAll(/font-family\s*:\s*([^;{}]+)/gi)) addFamily(m[1]);
+  }
+
+  return [...found].slice(0, 8);
+}
+
 type Meta = {
+  fonts: string[];
   title: string | null;
   description: string | null;
   site_name: string | null;
@@ -56,7 +114,10 @@ async function scrape(url: string): Promise<Meta> {
   $("script, style, nav, footer, header, aside").remove();
   const body = $("article").text() || $("main").text() || $("body").text();
 
+  const fonts = await extractFonts($, url);
+
   return {
+    fonts,
     title: pick('meta[property="og:title"]', 'meta[name="twitter:title"]', "title"),
     description: pick(
       'meta[property="og:description"]',

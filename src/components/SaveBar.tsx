@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { saveUrl, signOut, type SaveResult } from "@/app/actions";
+import { AddImage } from "./AddImage";
 
 export function SaveBar() {
   const form = useRef<HTMLFormElement>(null);
@@ -58,11 +59,9 @@ export function SaveBar() {
           </button>
         </div>
 
-        <form
-          ref={form}
-          action={formAction}
-          className="order-3 w-full sm:order-2 sm:w-auto sm:flex-1"
-        >
+        <div className="order-3 flex w-full gap-2 sm:order-2 sm:w-auto sm:flex-1">
+          <AddImage />
+          <form ref={form} action={formAction} className="flex-1">
           <input
             name="url"
             type="text"
@@ -72,9 +71,10 @@ export function SaveBar() {
             autoComplete="off"
             autoCapitalize="off"
             spellCheck={false}
-            className={`${field} disabled:opacity-60`}
-          />
-        </form>
+              className={`${field} disabled:opacity-60`}
+            />
+          </form>
+        </div>
 
         <input
           type="search"
