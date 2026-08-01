@@ -42,25 +42,24 @@ export function Card({ item, onOpen }: { item: Item; onOpen: () => void }) {
             <span className="truncate">
               {pending ? "Reading the page…" : item.site_name}
             </span>
+            {item.note && (
+              <span
+                title="Has a note"
+                aria-label="Has a note"
+                className="ml-auto h-1.5 w-1.5 shrink-0 rounded-full bg-accent"
+              />
+            )}
           </div>
 
-          <h2 className="mt-1.5 text-sm font-medium leading-snug sm:text-[15px]">{item.title}</h2>
+          <h2 className="mt-1.5 line-clamp-3 text-sm font-medium leading-snug sm:text-[15px]">
+            {item.title}
+          </h2>
 
-          {item.description && (
-            <p className="mt-1 line-clamp-3 text-[13px] leading-relaxed text-muted">
-              {item.description}
-            </p>
-          )}
-
-          {item.note && (
-            <p className="mt-2 border-l-2 border-accent pl-2 text-[13px] leading-relaxed">
-              {item.note}
-            </p>
-          )}
+          {/* Description lives in the detail panel — keeping the grid scannable. */}
 
           {item.tags.length > 0 && (
-            <ul className="mt-2.5 flex flex-wrap gap-1">
-              {item.tags.map((t) => (
+            <ul className="mt-2 flex flex-wrap gap-1">
+              {item.tags.slice(0, 3).map((t) => (
                 <li key={t} className="rounded-md bg-page px-1.5 py-0.5 text-[11px] text-muted">
                   {t}
                 </li>
