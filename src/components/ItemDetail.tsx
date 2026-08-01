@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { updateItem } from "@/app/actions";
+import { Thumb } from "./Thumb";
 import type { Item } from "@/lib/types";
 
 export function ItemDetail({ item, onClose }: { item: Item; onClose: () => void }) {
@@ -44,13 +45,9 @@ export function ItemDetail({ item, onClose }: { item: Item; onClose: () => void 
         className="w-full max-w-xl overflow-hidden rounded-2xl border border-hair bg-surface"
       >
         {item.image_url && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={item.image_url}
-            alt=""
-            className="max-h-64 w-full object-cover"
-            onError={(e) => { e.currentTarget.style.display = "none"; }}
-          />
+          <div className="max-h-64 overflow-hidden">
+            <Thumb src={item.image_url} pending={item.status === "pending"} />
+          </div>
         )}
 
         <div className="p-5">

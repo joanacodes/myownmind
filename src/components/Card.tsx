@@ -1,6 +1,7 @@
 "use client";
 
 import { deleteItem } from "@/app/actions";
+import { Thumb } from "./Thumb";
 import type { Item } from "@/lib/types";
 
 export function Card({ item, onOpen }: { item: Item; onOpen: () => void }) {
@@ -30,16 +31,7 @@ export function Card({ item, onOpen }: { item: Item; onOpen: () => void }) {
       </div>
 
       <button onClick={onOpen} className="block w-full cursor-pointer text-left">
-        {item.image_url && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={item.image_url}
-            alt=""
-            loading="lazy"
-            className="w-full object-cover"
-            onError={(e) => { e.currentTarget.style.display = "none"; }}
-          />
-        )}
+        {item.image_url && <Thumb src={item.image_url} pending={pending} />}
 
         <div className="p-3 sm:p-3.5">
           <div className={`flex items-center gap-1.5 text-[11px] text-muted ${pending ? "breathe" : ""}`}>

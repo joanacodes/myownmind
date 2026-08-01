@@ -20,3 +20,22 @@ body {
   .breathe { animation: breathe 1.6s ease-in-out infinite; }
   @keyframes breathe { 50% { opacity: .45; } }
 }
+
+/* Slow sweep across a neutral base — reads as "working", not "broken". */
+.shimmer {
+  background: linear-gradient(
+    100deg,
+    #E4E5E9 30%,
+    #F2F3F5 48%,
+    #E4E5E9 66%
+  );
+  background-size: 300% 100%;
+  animation: sweep 1.8s ease-in-out infinite;
+}
+@keyframes sweep {
+  from { background-position: 180% 0; }
+  to   { background-position: -80% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .shimmer { animation: none; background: #E4E5E9; }
+}
