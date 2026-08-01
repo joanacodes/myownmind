@@ -1,6 +1,7 @@
 import { supabaseServer } from "@/lib/supabase/server";
 import { SaveBar } from "@/components/SaveBar";
 import { Grid } from "@/components/Grid";
+import { AddImage } from "@/components/AddImage";
 import type { Item } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -28,7 +29,7 @@ export default async function Home({
   return (
     <>
       <SaveBar />
-      <main className="mx-auto max-w-6xl px-5 py-6">
+      <main className="mx-auto max-w-6xl px-5 pb-28 pt-6">
         {error ? (
           <p role="alert" className="mt-32 text-center text-sm text-accent">
             {error.message}
@@ -41,6 +42,7 @@ export default async function Home({
           <Grid items={items} />
         )}
       </main>
+      <AddImage />
     </>
   );
 }
