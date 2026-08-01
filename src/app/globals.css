@@ -39,3 +39,18 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .shimmer { animation: none; background: #E4E5E9; }
 }
+
+/*
+ * iOS Safari auto-zooms any focused field whose text is under 16px. Setting
+ * the fields to exactly 16px on small screens stops it — unlike
+ * `maximum-scale=1`, which also disables pinch-zoom and hurts accessibility.
+ */
+@media (max-width: 640px) {
+  /* !important because Tailwind's .text-sm outranks a bare element
+     selector on specificity, whatever the source order. */
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
