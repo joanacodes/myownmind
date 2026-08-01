@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter_Tight, Newsreader } from "next/font/google";
 import "./globals.css";
+import { SessionKeeper } from "@/components/SessionKeeper";
 
 const ui = Inter_Tight({ subsets: ["latin"], variable: "--font-ui" });
 const display = Newsreader({ subsets: ["latin"], style: ["italic"], variable: "--font-display" });
@@ -23,7 +24,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${ui.variable} ${display.variable}`}>
-      <body className="font-sans antialiased">{children}</body>
+      <body className="font-sans antialiased">
+        <SessionKeeper />
+        {children}
+      </body>
     </html>
   );
 }

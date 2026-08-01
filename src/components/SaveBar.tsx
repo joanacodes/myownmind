@@ -21,6 +21,10 @@ export function SaveBar() {
   }, [result]);
 
   async function handleSignOut() {
+    // Sign-out runs on the server, so the browser client never fires
+    // SIGNED_OUT — drop the stored token here or the next launch would
+    // silently sign back in.
+    localStorage.removeItem("mind.refresh_token");
     await signOut();
     router.push("/login");
     router.refresh();

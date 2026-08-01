@@ -17,10 +17,18 @@ export default function Login() {
   );
 
   useEffect(() => {
-    if (result?.ok) {
-      router.push("/");
-      router.refresh();
-    }
+    if (!result?.ok) return;
+    // The server set the cookie; sync the browser client so SessionKeeper
+    // can stash the refresh token for iOS.
+    supabaseBrowser()
+      .auth.getSession()
+      .then(({ data }) => {
+        if (data.session) {
+          localStorage.setItem("mind.refresh_token", data.session.refresh_token);
+        }
+        router.push("/");
+        router.refresh();
+      });
   }, [result, router]);
 
   async function sendReset() {

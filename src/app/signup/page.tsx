@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { signUpWithCode, signIn, type SaveResult } from "@/app/actions";
+import { supabaseBrowser } from "@/lib/supabase/client";
 
 export default function SignUp() {
   const [email, setEmail] = useState("");
@@ -23,12 +24,17 @@ export default function SignUp() {
     const fd = new FormData();
     fd.set("email", email.trim().toLowerCase());
     fd.set("password", password);
-    signIn(null, fd).then((r) => {
-      if (!r.ok) router.push("/login");
-      else {
-        router.push("/");
-        router.refresh();
+    signIn(null, fd).then(async (r) => {
+      if (!r.ok) {
+        router.push("/login");
+        return;
       }
+      const { data } = await supabaseBrowser().auth.getSession();
+      if (data.session) {
+        localStorage.setItem("mind.refresh_token", data.session.refresh_token);
+      }
+      router.push("/");
+      router.refresh();
     });
   }, [result, email, password, router]);
 
