@@ -2,8 +2,7 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { signUpWithCode, type SaveResult } from "@/app/actions";
-import { supabaseBrowser } from "@/lib/supabase/client";
+import { signUpWithCode, signIn, type SaveResult } from "@/app/actions";
 
 export default function SignUp() {
   const [email, setEmail] = useState("");
@@ -21,15 +20,16 @@ export default function SignUp() {
   useEffect(() => {
     if (!result?.ok) return;
     setSigningIn(true);
-    supabaseBrowser()
-      .auth.signInWithPassword({ email: email.trim().toLowerCase(), password })
-      .then(({ error }) => {
-        if (error) router.push("/login");
-        else {
-          router.push("/");
-          router.refresh();
-        }
-      });
+    const fd = new FormData();
+    fd.set("email", email.trim().toLowerCase());
+    fd.set("password", password);
+    signIn(null, fd).then((r) => {
+      if (!r.ok) router.push("/login");
+      else {
+        router.push("/");
+        router.refresh();
+      }
+    });
   }, [result, email, password, router]);
 
   const field =

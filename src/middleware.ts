@@ -16,7 +16,14 @@ export async function middleware(request: NextRequest) {
           list.forEach(({ name, value }) => request.cookies.set(name, value));
           response = NextResponse.next({ request });
           list.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
+            response.cookies.set(name, value, {
+              ...options,
+              // Persistent, not session-scoped — see supabase/server.ts.
+              maxAge: options.maxAge ?? 60 * 60 * 24 * 365,
+              sameSite: "lax",
+              secure: process.env.NODE_ENV === "production",
+              path: "/",
+            })
           );
         },
       },

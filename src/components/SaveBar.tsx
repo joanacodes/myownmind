@@ -2,8 +2,7 @@
 
 import { useActionState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { saveUrl, type SaveResult } from "@/app/actions";
-import { supabaseBrowser } from "@/lib/supabase/client";
+import { saveUrl, signOut, type SaveResult } from "@/app/actions";
 
 export function SaveBar() {
   const form = useRef<HTMLFormElement>(null);
@@ -21,8 +20,8 @@ export function SaveBar() {
     if (result?.ok) form.current?.reset();
   }, [result]);
 
-  async function signOut() {
-    await supabaseBrowser().auth.signOut();
+  async function handleSignOut() {
+    await signOut();
     router.push("/login");
     router.refresh();
   }
@@ -47,7 +46,7 @@ export function SaveBar() {
             Account
           </button>
           <button
-            onClick={signOut}
+            onClick={handleSignOut}
             className="rounded-lg px-2.5 py-1.5 text-[13px] text-muted
                        hover:bg-surface hover:text-ink"
           >

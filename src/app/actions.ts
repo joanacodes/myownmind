@@ -135,3 +135,38 @@ export async function signUpWithCode(
   }
   return { ok: true };
 }
+
+/**
+ * Signing in on the server means the cookie arrives as a Set-Cookie header
+ * rather than being written by JavaScript. iOS treats script-written cookies
+ * as disposable in home-screen apps and clears them when the app is killed;
+ * server-set ones survive.
+ */
+export async function signIn(
+  _prev: SaveResult | null,
+  formData: FormData
+): Promise<SaveResult> {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const password = String(formData.get("password") ?? "");
+
+  if (!email || !password) return { ok: false, message: "Enter your email and password." };
+
+  const db = await supabaseServer();
+  const { error } = await db.auth.signInWithPassword({ email, password });
+
+  if (error) {
+    return {
+      ok: false,
+      message:
+        error.message === "Invalid login credentials"
+          ? "That email and password do not match."
+          : error.message,
+    };
+  }
+  return { ok: true };
+}
+
+export async function signOut() {
+  const db = await supabaseServer();
+  await db.auth.signOut();
+}

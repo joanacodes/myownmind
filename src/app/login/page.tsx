@@ -1,54 +1,37 @@
 "use client";
 
-import { useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { signIn, type SaveResult } from "@/app/actions";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
 export default function Login() {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const [resetError, setResetError] = useState<string | null>(null);
   const router = useRouter();
 
-  async function signIn(e: React.FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    setError(null);
+  const [result, formAction, pending] = useActionState<SaveResult | null, FormData>(
+    signIn,
+    null
+  );
 
-    const { error } = await supabaseBrowser().auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
-
-    setBusy(false);
-    if (error) {
-      setError(
-        error.message === "Invalid login credentials"
-          ? "That email and password do not match. If you have never set a password, use the link below."
-          : error.message
-      );
-      return;
+  useEffect(() => {
+    if (result?.ok) {
+      router.push("/");
+      router.refresh();
     }
-    router.push("/");
-    router.refresh();
-  }
+  }, [result, router]);
 
   async function sendReset() {
     if (!email.trim()) {
-      setError("Enter your email first.");
+      setResetError("Enter your email first.");
       return;
     }
-    setBusy(true);
-    setError(null);
-
     const { error } = await supabaseBrowser().auth.resetPasswordForEmail(email.trim(), {
       redirectTo: `${location.origin}/auth/callback?next=/account`,
     });
-
-    setBusy(false);
-    if (error) setError(error.message);
+    if (error) setResetError(error.message);
     else setSent(true);
   }
 
@@ -64,8 +47,9 @@ export default function Login() {
           Check {email} for a link. Opening it lets you choose a password.
         </p>
       ) : (
-        <form onSubmit={signIn} className="mt-6 flex flex-col gap-3">
+        <form action={formAction} className="mt-6 flex flex-col gap-3">
           <input
+            name="email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -74,27 +58,26 @@ export default function Login() {
             className={field}
           />
           <input
+            name="password"
             type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
             placeholder="Password"
             autoComplete="current-password"
             className={field}
           />
 
-          {error && (
+          {(result && !result.ok) || resetError ? (
             <p role="alert" className="text-[13px] leading-relaxed text-accent">
-              {error}
+              {resetError ?? result?.message}
             </p>
-          )}
+          ) : null}
 
           <button
             type="submit"
-            disabled={busy}
+            disabled={pending}
             className="rounded-lg bg-ink px-3 py-2 text-sm text-white hover:bg-accent
                        disabled:opacity-60"
           >
-            {busy ? "…" : "Sign in"}
+            {pending ? "…" : "Sign in"}
           </button>
 
           <button
@@ -108,7 +91,6 @@ export default function Login() {
           <button
             type="button"
             onClick={sendReset}
-            disabled={busy}
             className="text-[13px] text-muted underline underline-offset-2 hover:text-ink"
           >
             Set or reset your password by email
