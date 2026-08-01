@@ -2,8 +2,8 @@
 
 import { after } from "next/server";
 import { revalidatePath } from "next/cache";
-import { supabaseServer } from "@/lib/supabase/server";
 import { createClient } from "@supabase/supabase-js";
+import { supabaseServer } from "@/lib/supabase/server";
 import { canonicalize, enrichItem, previewUrl } from "@/lib/enrich";
 
 export type SaveResult = { ok: boolean; message?: string };
@@ -73,6 +73,43 @@ export async function saveUrl(
   return { ok: true };
 }
 
+/**
+ * Creates the row for an image the browser has already uploaded. The file
+ * itself never passes through here: server actions cap request bodies at
+ * 1 MB, and phone photos are several times that. The browser writes straight
+ * to Storage and sends only the resulting path.
+ */
+export async function registerImage(
+  path: string,
+  title: string
+): Promise<SaveResult> {
+  const db = await supabaseServer();
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return { ok: false, message: "Session expired. Sign in again." };
+
+  // Never trust a client-supplied path to point outside the user's folder.
+  if (!path.startsWith(`${user.id}/`)) {
+    return { ok: false, message: "Invalid upload path." };
+  }
+
+  const { error } = await db.from("items").insert({
+    user_id: user.id,
+    type: "image",
+    title: title.slice(0, 200) || "Image",
+    site_name: "Uploaded",
+    storage_path: path,
+    status: "ready",
+  });
+
+  if (error) {
+    await db.storage.from("media").remove([path]);
+    return { ok: false, message: error.message };
+  }
+
+  revalidatePath("/");
+  return { ok: true };
+}
+
 export async function updateItem(
   id: string,
   note: string,
@@ -92,6 +129,19 @@ export async function updateItem(
 export async function deleteItem(id: string) {
   const db = await supabaseServer();
   await db.from("items").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+  revalidatePath("/");
+}
+
+/**
+ * Persists a palette extracted in the browser. No "only if empty" guard here:
+ * the first extraction may have run against the mShots placeholder, so a
+ * later, better palette must be allowed to replace it. The caller decides
+ * whether a palette is worth saving.
+ */
+export async function saveColors(id: string, colors: string[]): Promise<void> {
+  if (!colors.length) return;
+  const db = await supabaseServer();
+  await db.from("items").update({ colors: colors.slice(0, 12) }).eq("id", id);
   revalidatePath("/");
 }
 
@@ -169,68 +219,4 @@ export async function signIn(
 export async function signOut() {
   const db = await supabaseServer();
   await db.auth.signOut();
-}
-
-/**
- * Persists a palette extracted in the browser. No "only if empty" guard here:
- * the first extraction may have run against the mShots placeholder, so a
- * later, better palette must be allowed to replace it. The caller decides
- * whether a palette is worth saving.
- */
-export async function saveColors(id: string, colors: string[]): Promise<void> {
-  if (!colors.length) return;
-  const db = await supabaseServer();
-  await db.from("items").update({ colors: colors.slice(0, 12) }).eq("id", id);
-  revalidatePath("/");
-}
-
-/**
- * Stores an uploaded or camera-captured image. The file goes to a private
- * bucket under the user's own folder; the row points at the path, and the
- * proxy route serves the bytes back.
- */
-export async function saveImage(
-  _prev: SaveResult | null,
-  formData: FormData
-): Promise<SaveResult> {
-  const file = formData.get("file");
-  if (!(file instanceof File) || file.size === 0) {
-    return { ok: false, message: "Choose an image first." };
-  }
-  if (!file.type.startsWith("image/")) {
-    return { ok: false, message: "That is not an image." };
-  }
-  if (file.size > 10 * 1024 * 1024) {
-    return { ok: false, message: "Images need to be under 10 MB." };
-  }
-
-  const db = await supabaseServer();
-  const { data: { user } } = await db.auth.getUser();
-  if (!user) return { ok: false, message: "Session expired. Sign in again." };
-
-  const ext = (file.name.split(".").pop() ?? "jpg").toLowerCase().slice(0, 5);
-  const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
-
-  const { error: uploadError } = await db.storage
-    .from("media")
-    .upload(path, file, { contentType: file.type, upsert: false });
-
-  if (uploadError) return { ok: false, message: uploadError.message };
-
-  const { error } = await db.from("items").insert({
-    user_id: user.id,
-    type: "image",
-    title: file.name.replace(/\.[^.]+$/, "") || "Image",
-    site_name: "Uploaded",
-    storage_path: path,
-    status: "ready",
-  });
-
-  if (error) {
-    await db.storage.from("media").remove([path]);
-    return { ok: false, message: error.message };
-  }
-
-  revalidatePath("/");
-  return { ok: true };
 }
